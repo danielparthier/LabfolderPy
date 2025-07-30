@@ -1,0 +1,20 @@
+[project]
+name = "LabfolderPy"
+version = "0.1.0"
+description = "A Python project for Labfolder integration"
+authors = [
+    { name = "Daniel", email = "daniel@example.com" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/daniel/LabfolderPy"
+
+[tool.setuptools]
+packages = ["labfolderpy"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
