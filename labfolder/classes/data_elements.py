@@ -101,14 +101,9 @@ class DataElement:
             json={"entry_id": entry_id, "description": self.description},
             timeout=10,
         )
-        if response.status_code == 201:
-            print("Data written to Labfolder.")
+        status = _handle_response(self, response, return_status=True)
+        if status:
             self.element_id = response.json()["id"]
-        else:
-            print(
-                f"Data could not be written to Labfolder. Status code: {response.status_code}"
-            )
-            print(response.text)
         return None
 
     def update_on_labfolder(self, user_info: LabFolderUserInfo):
@@ -135,13 +130,7 @@ class DataElement:
             json={"id": self.element_id, "description": self.description},
             timeout=10,
         )
-        if response.status_code == 200:
-            print("Data updated on Labfolder.")
-        else:
-            print(
-                f"Data could not be updated on Labfolder. Status code: {response.status_code}"
-            )
-            print(response.text)
+        _handle_response(self, response)
         return None
 
     def __repr__(self):
@@ -413,14 +402,9 @@ class TextElement:
             json={"entry_id": entry_id, "content": self.content},
             timeout=10,
         )
-        if response.status_code == 201:
-            print("Text written to Labfolder.")
+        status = _handle_response(self, response, return_status=True)
+        if status:
             self.id = response.json()["id"]
-        else:
-            print(
-                f"Text could not be written to Labfolder. Status code: {response.status_code}"
-            )
-            print(response.text)
         return None
 
     def update_on_labfolder(self, user_info: LabFolderUserInfo):
@@ -449,13 +433,7 @@ class TextElement:
             json={"id": self.element_id, "content": self.content},
             timeout=10,
         )
-        if response.status_code == 200:
-            print("Text updated on Labfolder.")
-        else:
-            print(
-                f"Text could not be updated on Labfolder. Status code: {response.status_code}"
-            )
-            print(response.text)
+        _handle_response(self, response)
         return None
 
     def __repr__(self):
@@ -560,15 +538,7 @@ class DataElementGroup:
             json=content,
             timeout=10,
         )
-        if response.status_code == 201:
-            print("Data element group written to Labfolder.")
-            self.element_id = response.json()["id"]
-        else:
-            print(
-                f"Data element group could not be written to Labfolder. "
-                f"Status code: {response.status_code}"
-            )
-            print(response.text)
+        _handle_response(self, response)
         return None
 
     def update_on_labfolder(self, user_info: LabFolderUserInfo):
@@ -604,13 +574,7 @@ class DataElementGroup:
             json=content,
             timeout=10,
         )
-        if response.status_code == 200:
-            print("Data element group updated on Labfolder.")
-        else:
-            print(
-                f"Data element group could not be updated on Labfolder. "
-                f"Status code: {response.status_code}"
-            )
+        _handle_response(self, response)
         return None
 
     def __labfolder_dict__(self):
@@ -806,15 +770,9 @@ class TableElement:
                 "locked": False,
             },
         )
-        if response.status_code == 201:
-            print(f"Table {self.title} written to Labfolder.")
+        status = _handle_response(self, response, return_status=True)
+        if status:
             self.element_id = response.json()["id"]
-        else:
-            print(
-                f"Table {self.title} could not be written to Labfolder. "
-                f"Status code: {response.status_code}"
-            )
-            print(response.text)
         return None
 
     def update_on_labfolder(self, user_info: LabFolderUserInfo, header=True):
@@ -855,14 +813,7 @@ class TableElement:
                 "locked": False,
             },
         )
-        if response.status_code == 200:
-            print(f"Table {self.title} updated on Labfolder.")
-        else:
-            print(
-                f"Table {self.title} could not be updated on Labfolder. "
-                f"Status code: {response.status_code}"
-            )
-            print(response.text)
+        _handle_response(self, response)
         return None
 
     def table_to_pd(self, header=True, in_place=True):
@@ -1149,6 +1100,47 @@ class TableElement:
         return (
             f"TableElement(type={self.type}, id={self.element_id}, table={self.table})"
         )
+
+
+def _handle_response(
+    element,
+    response: requests.Response,
+    silent: bool = False,
+    return_status: bool = False,
+) -> bool | None:
+    """Handle the response from Labfolder API requests.
+
+    Args:
+        response (int): The HTTP status code from the response.
+        element_name (str): The name of the element being processed.
+        silent (bool): If True, suppresses print statements.
+    Returns:
+        None
+    """
+    response_text = ""
+    if response == 200 and response.request.method == "PUT":
+        response_text = element.type, "updated on Labfolder."
+        status = True
+    elif response == 201 and response.request.method == "POST":
+        response_text = element.type, "written to Labfolder."
+        status = True
+    else:
+        if response.request.method == "POST":
+            response_text = (
+                f"{element.type} could not be written to Labfolder. "
+                f"Status code: {response.status_code}"
+            )
+        elif response.request.method == "PUT":
+            response_text = (
+                f"{element.type} could not be updated on Labfolder. "
+                f"Status code: {response.status_code}"
+            )
+        status = False
+    if not silent:
+        print(response_text)
+    if return_status:
+        return status
+    return None
 
 
 def parse_data_element(
